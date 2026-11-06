@@ -195,21 +195,23 @@ def get_replies(aid, mk, n=20):
     j = r.json()
     top = (j.get("data") or {}).get("replies") or []
     for x in top:
-        if x.get("mid") == MY_UID:
-            continue
-        reps.append(_row(x, x.get("rpid")))
-        # 拉这条主评论下的楼中楼（含主人留言），一并纳入候选
+        # 先拉这条主评论下的楼中楼（主人留言常挂在小号自己的评论下，
+        # 不能因为主评论是小号就把它下面的楼中楼一并跳过）
         rp = sign({"type": 1, "oid": aid, "root": x.get("rpid"),
                    "ps": n, "next": 0}, mk)
         rurl = "https://api.bilibili.com/x/v2/reply/reply?" + urllib.parse.urlencode(rp)
         try:
             rd = requests.get(rurl, headers=bh(), timeout=20).json()
         except Exception:
-            continue
+            rd = {}
         for s in (rd.get("data") or {}).get("replies") or []:
             if s.get("mid") == MY_UID:
                 continue
             reps.append(_row(s, x.get("rpid")))
+        # 主评论本身：非小号才进候选
+        if x.get("mid") == MY_UID:
+            continue
+        reps.append(_row(x, x.get("rpid")))
     return reps
 
 
