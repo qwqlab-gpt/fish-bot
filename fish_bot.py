@@ -174,23 +174,42 @@ def search_videos(mk):
     return list(out.values())[:15]
 
 
+def _row(x, root):
+    return {
+        "rpid": x.get("rpid"), "mid": x.get("mid"),
+        "uname": (x.get("member") or {}).get("uname", ""),
+        "content": re.sub(r"<[^>]+>", "",
+                          str((x.get("content") or {}).get("message", ""))),
+        "like": x.get("like", 0),
+        "root": root, "parent": x.get("rpid"),
+    }
+
+
 def get_replies(aid, mk, n=20):
+    reps = []
+    # 主评论
     p = sign({"type": 1, "oid": aid, "sort": 1, "ps": n, "next": 0,
               "pagination_str": '{"offset":""}'}, mk)
     url = "https://api.bilibili.com/x/v2/reply/wbi/main?" + urllib.parse.urlencode(p)
     r = requests.get(url, headers=bh(), timeout=20)
     j = r.json()
-    reps = []
-    for x in (j.get("data") or {}).get("replies") or []:
+    top = (j.get("data") or {}).get("replies") or []
+    for x in top:
         if x.get("mid") == MY_UID:
             continue
-        reps.append({
-            "rpid": x.get("rpid"), "mid": x.get("mid"),
-            "uname": (x.get("member") or {}).get("uname", ""),
-            "content": re.sub(r"<[^>]+>", "",
-                              str((x.get("content") or {}).get("message", ""))),
-            "like": x.get("like", 0),
-        })
+        reps.append(_row(x, x.get("rpid")))
+        # 拉这条主评论下的楼中楼（含主人留言），一并纳入候选
+        rp = sign({"type": 1, "oid": aid, "root": x.get("rpid"),
+                   "ps": n, "next": 0}, mk)
+        rurl = "https://api.bilibili.com/x/v2/reply/reply?" + urllib.parse.urlencode(rp)
+        try:
+            rd = requests.get(rurl, headers=bh(), timeout=20).json()
+        except Exception:
+            continue
+        for s in (rd.get("data") or {}).get("replies") or []:
+            if s.get("mid") == MY_UID:
+                continue
+            reps.append(_row(s, x.get("rpid")))
     return reps
 
 
@@ -259,7 +278,7 @@ def reply_pass(s, mk):
         v = {"title": post["bvid"]}
         text = gen_comment(reply_prompt(v, target, kind))
         at = [target["mid"]] if kind == "主人" else None
-        res = post_comment(post["aid"], text, target["rpid"], target["rpid"], mk, at_uids=at)
+        res = post_comment(post["aid"], text, target["root"], target["parent"], mk, at_uids=at)
         if res.get("code") == 0:
             s["replied"].append(target["rpid"])
             return {"aid": post["aid"], "kind": kind, "uname": target["uname"],
