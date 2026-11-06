@@ -65,7 +65,7 @@ def today():
 
 
 def bj_hour():
-    return datetime.now(BJ).hour()
+    return datetime.now(BJ).hour
 
 
 def log(*a):
