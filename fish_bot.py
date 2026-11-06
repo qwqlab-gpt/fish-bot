@@ -194,11 +194,13 @@ def get_replies(aid, mk, n=20):
     return reps
 
 
-def post_comment(aid, message, root=0, parent=0, mk=""):
+def post_comment(aid, message, root=0, parent=0, mk="", at_uids=None):
     m = re.search(r"bili_jct=([^;]+)", BILI_COOKIE)
     csrf = m.group(1) if m else ""
     base = {"type": 1, "oid": int(aid), "message": message, "plat": 1,
             "csrf": csrf, "root": root, "parent": parent}
+    if at_uids:
+        base["at_uids"] = ",".join(str(x) for x in at_uids)
     if mk:
         base = sign(base, mk)
     r = requests.post("https://api.bilibili.com/x/v2/reply/add",
@@ -256,7 +258,8 @@ def reply_pass(s, mk):
             continue
         v = {"title": post["bvid"]}
         text = gen_comment(reply_prompt(v, target, kind))
-        res = post_comment(post["aid"], text, target["rpid"], target["rpid"], mk)
+        at = [target["mid"]] if kind == "主人" else None
+        res = post_comment(post["aid"], text, target["rpid"], target["rpid"], mk, at_uids=at)
         if res.get("code") == 0:
             s["replied"].append(target["rpid"])
             return {"aid": post["aid"], "kind": kind, "uname": target["uname"],
@@ -287,7 +290,8 @@ def do_one():
         v = sorted(fresh, key=lambda a: a["play"], reverse=True)[0]
         log(f"选中视频：{v['bvid']} {v['title']}")
         main_comment = gen_comment(main_prompt(v))
-        res1 = post_comment(v["aid"], main_comment + f" @{AT_NICKNAME}", mk=mk)
+        res1 = post_comment(v["aid"], main_comment + f" @{AT_NICKNAME}", mk=mk,
+                            at_uids=[MASTER_UID])
         log(f"主评论返回 code={res1.get('code')} msg={res1.get('message')}")
         if res1.get("code") != 0:
             save_state(s)
