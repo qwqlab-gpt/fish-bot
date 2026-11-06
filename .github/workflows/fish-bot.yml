@@ -1,0 +1,30 @@
+name: fish-bot
+
+# 每 20 分钟跑一次（UTC cron）；脚本内部按北京时间判断 12 点后才动作
+on:
+  schedule:
+    - cron: "*/20 * * * *"
+  workflow_dispatch: {}
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run fish bot
+        env:
+          BILI_COOKIE: ${{ secrets.BILI_COOKIE }}
+          ZHIPU_KEY: ${{ secrets.ZHIPU_KEY }}
+          CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
+          CF_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
+          KV_NAMESPACE_ID: ${{ secrets.KV_NAMESPACE_ID }}
+        run: python fish_bot.py
