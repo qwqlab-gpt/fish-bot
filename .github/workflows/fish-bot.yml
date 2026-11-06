@@ -1,6 +1,7 @@
 name: fish-bot
 
 # 每 5 分钟跑一次（UTC cron）；脚本内部按北京时间判断 12 点后才动作
+# schedule 注册刷新
 on:
   schedule:
     - cron: "*/5 * * * *"
