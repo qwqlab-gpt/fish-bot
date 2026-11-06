@@ -1,9 +1,9 @@
 name: fish-bot
 
-# 每 20 分钟跑一次（UTC cron）；脚本内部按北京时间判断 12 点后才动作
+# 每 5 分钟跑一次（UTC cron）；脚本内部按北京时间判断 12 点后才动作
 on:
   schedule:
-    - cron: "*/20 * * * *"
+    - cron: "*/5 * * * *"
   workflow_dispatch: {}
 
 jobs:
