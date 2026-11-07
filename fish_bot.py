@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 大肥鱼 · GitHub Actions 定时脚本
-- 每 20 分钟由 workflow 触发；北京时间 12:00 之前跳过
+- 每 20 分钟由 workflow 触发；北京时间 07:00 之前跳过
 - 中午首轮：搜关键词视频 -> 智谱生成人格评论 -> 发主评论并 @主人（每天 1 条）
 - 之后轮次：在已发主评论的视频下回复，优先回主人，兜底高赞路人；按 rpid 去重；每天回复上限 8 条
 - 状态持久化在 Cloudflare KV（跨 Actions runner 去重）
@@ -31,7 +31,7 @@ MASTER_UID = 3546554199706480          # 主人大号 XJ-29（若不符请按主
 KEYWORDS = ["术力口 周榜", "第五人格", "网络安全"]
 ZHIPU_MODEL = "glm-4-flash"
 ZHIPU_BASE = "https://open.bigmodel.cn/api/paas/v4"
-NOON_HOUR = 12
+NOON_HOUR = 7
 REPLY_DAILY_LIMIT = 8
 UA = ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
       "(KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36")
@@ -296,7 +296,7 @@ def do_one():
 
     if bj_hour() < NOON_HOUR:
         log(f"未到中午 {NOON_HOUR} 点（当前 {bj_hour()} 点），跳过")
-        return {"skipped": "未到中午12点", "hour": bj_hour()}
+        return {"skipped": "未到07点", "hour": bj_hour()}
 
     mk = ensure_wbi()
     log("wbi keys 就绪")
@@ -342,3 +342,4 @@ if __name__ == "__main__":
     except Exception as e:
         log(f"运行失败：{type(e).__name__}: {e}")
         raise
+
